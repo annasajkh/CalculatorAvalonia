@@ -35,19 +35,61 @@ jobs:
           ${{ runner.os }}-nuget-
     - name: Publish
       run: dotnet publish ./CalculatorAvalonia/CalculatorAvalonia.csproj --configuration Release --runtime ${{ matrix.platform }}-${{ matrix.arch }} --self-contained true --output ./publish
-    - name: Zip artifact (Windows)
+
+    # Windows-specific steps
+    - name: Generate GUIDs
       if: matrix.os == 'windows-latest'
-      run: Compress-Archive -Path ./publish/* -DestinationPath ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.zip
+      run: |
+        $productGuid = [Guid]::NewGuid().ToString().ToUpper()
+        $upgradeGuid = [Guid]::NewGuid().ToString().ToUpper()
+        echo "PRODUCT_GUID=$productGuid" >> $env:GITHUB_ENV
+        echo "UPGRADE_GUID=$upgradeGuid" >> $env:GITHUB_ENV
       shell: pwsh
-    - name: Zip artifact (Linux)
+
+    - name: Create .wixproj file
+      if: matrix.os == 'windows-latest'
+      run: |
+        echo '<Project Sdk="Microsoft.NET.Sdk">
+          <PropertyGroup>
+            <OutputType>Package</OutputType>
+            <TargetFramework>net8.0-windows</TargetFramework>
+            <DefineConstants>ProductGuid=${{ env.PRODUCT_GUID }};UpgradeGuid=${{ env.UPGRADE_GUID }}</DefineConstants>
+          </PropertyGroup>
+          <ItemGroup>
+            <PackageReference Include="Microsoft.Build.Tasks.Windows" Version="*" />
+          </ItemGroup>
+          <ItemGroup>
+            <Content Include="publish\**\*" />
+          </ItemGroup>
+        </Project>' > CalculatorAvalonia.wixproj
+
+    - name: Create MSI (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        dotnet build CalculatorAvalonia.wixproj -c Release -o ./installer
+        mv ./installer/*.msi ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.msi
+
+    # Linux-specific steps
+    - name: Create DEB Package (Linux)
       if: matrix.os == 'ubuntu-latest'
-      run: zip -r ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.zip ./publish
-      shell: bash
+      run: |
+        mkdir -p ./deb/DEBIAN
+        mkdir -p ./deb/usr/local/bin/CalculatorAvalonia
+        cp -r ./publish/* ./deb/usr/local/bin/CalculatorAvalonia/
+        echo "Package: CalculatorAvalonia
+        Version: 1.0
+        Section: base
+        Priority: optional
+        Architecture: amd64
+        Maintainer: AnnasVirtual <annasvirtual@gmail.com>
+        Description: Avalonia Calculator Application" > ./deb/DEBIAN/control
+        dpkg-deb --build ./deb CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.deb
+
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.platform }}-${{ matrix.arch }}
-        path: ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.zip
+        path: ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.${{ matrix.platform == 'win' && 'msi' || 'deb' }}
 
   create-release:
     needs: build
@@ -58,20 +100,12 @@ jobs:
       uses: actions/checkout@v3
     - name: Download artifacts
       uses: actions/download-artifact@v3
-    - name: Validate artifacts
-      run: |
-        for file in ./*/*.zip; do
-          if ! unzip -t "$file" > /dev/null; then
-            echo "Error: $file is not a valid zip file"
-            exit 1
-          fi
-        done
     - name: Create Release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         assets=""
-        for file in ./*/*.zip; do
+        for file in ./*/*.msi ./*/*.deb; do
           assets="$assets $file"
         done
         gh release create ${{ github.ref_name }} \
