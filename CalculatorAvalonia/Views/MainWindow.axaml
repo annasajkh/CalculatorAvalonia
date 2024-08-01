@@ -1,0 +1,115 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:CalculatorAvalonia.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="clr-namespace:AvaloniaMath.Controls;assembly=AvaloniaMath"
+        mc:Ignorable="d"
+        Width="320"
+        Height="450"
+        MinWidth="320"
+        MinHeight="450"
+        x:Class="CalculatorAvalonia.Views.MainWindow"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="Calculator Avalonia"
+        Background="#202020">
+
+	<Design.DataContext>
+		<!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+		<vm:MainWindowViewModel/>
+	</Design.DataContext>
+	
+	<Window.Styles>
+		<Style Selector="Button">
+			<Setter Property="Background" Value="#3b3b3b"></Setter>
+			<Setter Property="FontSize" Value="16"></Setter>
+		</Style>
+	</Window.Styles>
+
+	<Grid RowDefinitions="100, *">
+		<Label Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" FontSize="32" HorizontalContentAlignment="Right" VerticalContentAlignment="Center">0</Label>
+		<Grid Grid.Row="1" ColumnDefinitions="*, *, *, *" RowDefinitions="*, *, *, *, *" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
+			<Button Grid.Row="0" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="8" Background="#323232">
+				<Label HorizontalAlignment="Center" VerticalAlignment="Center">%</Label>
+			</Button>
+
+			<Button Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="8" Background="#323232">
+				<Label HorizontalAlignment="Center" VerticalAlignment="Center">CE</Label>
+			</Button>
+
+			<Button Grid.Row="0" Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="8" Background="#323232">
+				<controls:FormulaBlock HorizontalAlignment="Center" VerticalAlignment="Center" Formula="\div" FontSize="16" />
+			</Button>
+
+			<Button Grid.Row="0" Grid.Column="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="8" Background="#323232">
+				<Image Source="../Assets/icons/backspace-arrow.png" HorizontalAlignment="Center" VerticalAlignment="Center" Width="16" Height="16"></Image>
+			</Button>
+
+			<Button Grid.Row="1" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="8">
+				<Label HorizontalAlignment="Center" VerticalAlignment="Center">7</Label>
+			</Button>
+
+			<Button Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="8">
+				<Label HorizontalAlignment="Center" VerticalAlignment="Center">8</Label>
+			</Button>
+
+			<Button Grid.Row="1" Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="8">
+				<Label HorizontalAlignment="Center" VerticalAlignment="Center">9</Label>
+			</Button>
+			<Button Grid.Row="1" Grid.Column="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="8" Background="#323232">
+				<controls:FormulaBlock HorizontalAlignment="Center" VerticalAlignment="Center" Formula="\times" FontSize="16" />
+			</Button>
+
+
+			<Button Grid.Row="2" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="8">
+				<Label HorizontalAlignment="Center" VerticalAlignment="Center">4</Label>
+			</Button>
+
+			<Button Grid.Row="2" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="8">
+				<Label HorizontalAlignment="Center" VerticalAlignment="Center">5</Label>
+			</Button>
+
+			<Button Grid.Row="2" Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="8">
+				<Label HorizontalAlignment="Center" VerticalAlignment="Center">6</Label>
+			</Button>
+
+			<Button Grid.Row="2" Grid.Column="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="8" Background="#323232">
+				<controls:FormulaBlock HorizontalAlignment="Center" VerticalAlignment="Center" Formula="-" FontSize="16" />
+			</Button>
+
+
+			<Button Grid.Row="3" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="8">
+				<Label HorizontalAlignment="Center" VerticalAlignment="Center">1</Label>
+			</Button>
+
+			<Button Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="8">
+				<Label HorizontalAlignment="Center" VerticalAlignment="Center">2</Label>
+			</Button>
+
+			<Button Grid.Row="3" Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="8">
+				<Label HorizontalAlignment="Center" VerticalAlignment="Center">3</Label>
+			</Button>
+			<Button Grid.Row="3" Grid.Column="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="8" Background="#323232">
+				<controls:FormulaBlock HorizontalAlignment="Center" VerticalAlignment="Center" Formula="+" FontSize="16" />
+			</Button>
+
+
+			<Button Grid.Row="4" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="8">
+				<Label HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16">+/-</Label>
+			</Button>
+
+			<Button Grid.Row="4" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="8">
+				<Label HorizontalAlignment="Center" VerticalAlignment="Center">0</Label>
+			</Button>
+
+			<Button Grid.Row="4" Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="8">
+				<Label HorizontalAlignment="Center" VerticalAlignment="Center">.</Label>
+			</Button>
+			<Button Grid.Row="4" Grid.Column="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="8" Background="#323232">
+				<Image Source="../Assets/icons/equal-mathematical-sign.png" HorizontalAlignment="Center" VerticalAlignment="Center" Width="16" Height="16"></Image>
+			</Button>
+		</Grid>
+	</Grid>
+
+</Window>
