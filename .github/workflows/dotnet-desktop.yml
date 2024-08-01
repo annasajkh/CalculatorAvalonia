@@ -107,7 +107,7 @@ jobs:
       run: |
         $wixPath = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
         $publishDir = Resolve-Path .\publish
-        & "$wixPath\heat.exe" dir $publishDir -dr INSTALLFOLDER -cg GeneratedProductComponents -gg -sfrag -srd -scom -sreg -var var.PublishDir -out components.wxs
+        & "$wixPath\heat.exe" dir $publishDir -dr INSTALLFOLDER -cg GeneratedProductComponentsHeat -gg -sfrag -srd -scom -sreg -var var.PublishDir -out components.wxs
         & "$wixPath\candle.exe" -dPublishDir="$publishDir" installer.wxs components.wxs
         & "$wixPath\light.exe" -ext WixUIExtension installer.wixobj components.wixobj -out CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.msi
       shell: pwsh
