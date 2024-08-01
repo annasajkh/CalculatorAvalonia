@@ -8,7 +8,7 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <InvariantGlobalization>True</InvariantGlobalization>
     <PublishAot>true</PublishAot>
-    <RootNamespace>Calculator</RootNamespace>
+    <RootNamespace>CalculatorAvalonia</RootNamespace>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">

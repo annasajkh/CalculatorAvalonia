@@ -12,7 +12,8 @@
         x:Class="CalculatorAvalonia.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
         Title="Calculator Avalonia"
-        Background="#202020">
+        Background="#202020"
+        WindowStartupLocation="CenterScreen">
 
 	<Design.DataContext>
 		<!-- This only sets the DataContext for the previewer in an IDE,
