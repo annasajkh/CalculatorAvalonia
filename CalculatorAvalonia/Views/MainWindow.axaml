@@ -10,7 +10,7 @@
         MinWidth="320"
         MinHeight="450"
         x:Class="CalculatorAvalonia.Views.MainWindow"
-        Icon="/Assets/avalonia-logo.ico"
+        Icon="/Assets/icon.ico"
         Title="Calculator Avalonia"
         Background="#202020"
         WindowStartupLocation="CenterScreen">
