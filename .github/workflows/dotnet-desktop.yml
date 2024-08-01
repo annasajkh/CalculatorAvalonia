@@ -51,7 +51,7 @@ jobs:
       run: |
         echo '<?xml version="1.0" encoding="UTF-8"?>
         <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-          <Product Id="${{ env.PRODUCT_GUID }}" Name="CalculatorAvalonia" Language="1033" Version="1.0.0.0" Manufacturer="AnnasVirtual" UpgradeCode="${{ env.UPGRADE_GUID }}">
+          <Product Id="${{ env.PRODUCT_GUID }}" Name="CalculatorAvalonia" Language="1033" Version="1.0.0.0" Manufacturer="AnnaVirtual" UpgradeCode="${{ env.UPGRADE_GUID }}">
             <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
             <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
             <MediaTemplate EmbedCab="yes" />
@@ -73,7 +73,7 @@ jobs:
       run: |
         $wixPath = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
         $publishDir = Resolve-Path .\publish
-        & "$wixPath\heat.exe" dir $publishDir -dr INSTALLFOLDER -cg ProductComponents -gg -sfrag -srd -scom -sreg -out components.wxs
+        & "$wixPath\heat.exe" dir $publishDir -dr INSTALLFOLDER -cg ProductComponents -gg -sfrag -srd -scom -sreg -var var.PublishDir -out components.wxs
         & "$wixPath\candle.exe" -dPublishDir="$publishDir" installer.wxs components.wxs
         & "$wixPath\light.exe" -ext WixUIExtension installer.wixobj components.wixobj -out CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.msi
       shell: pwsh
@@ -90,7 +90,7 @@ jobs:
         Section: base
         Priority: optional
         Architecture: amd64
-        Maintainer: AnnasVirtual <annasvirtual@gmail.com>
+        Maintainer: AnnaVirtual <annasvirtual@gmail.com>
         Description: Avalonia Calculator Application" > ./deb/DEBIAN/control
         dpkg-deb --build ./deb CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.deb
 
