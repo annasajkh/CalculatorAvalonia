@@ -37,6 +37,13 @@ jobs:
       run: dotnet publish ./CalculatorAvalonia/CalculatorAvalonia.csproj --configuration Release --runtime ${{ matrix.platform }}-${{ matrix.arch }} --self-contained true --output ./publish
 
     # Windows-specific steps
+    - name: Install WiX Toolset
+      if: matrix.os == 'windows-latest'
+      run: |
+        choco install wixtoolset -y
+        refreshenv
+      shell: powershell
+
     - name: Generate GUIDs
       if: matrix.os == 'windows-latest'
       run: |
@@ -46,28 +53,42 @@ jobs:
         echo "UPGRADE_GUID=$upgradeGuid" >> $env:GITHUB_ENV
       shell: pwsh
 
-    - name: Create .wixproj file
+    - name: Create WiX source file
       if: matrix.os == 'windows-latest'
       run: |
-        echo '<Project Sdk="Microsoft.NET.Sdk">
-          <PropertyGroup>
-            <OutputType>Package</OutputType>
-            <TargetFramework>net8.0-windows</TargetFramework>
-            <DefineConstants>ProductGuid=${{ env.PRODUCT_GUID }};UpgradeGuid=${{ env.UPGRADE_GUID }}</DefineConstants>
-          </PropertyGroup>
-          <ItemGroup>
-            <PackageReference Include="Microsoft.Build.Tasks.Windows" Version="*" />
-          </ItemGroup>
-          <ItemGroup>
-            <Content Include="publish\**\*" />
-          </ItemGroup>
-        </Project>' > CalculatorAvalonia.wixproj
+        echo '<?xml version="1.0" encoding="UTF-8"?>
+        <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+          <Product Id="${{ env.PRODUCT_GUID }}" Name="CalculatorAvalonia" Language="1033" Version="1.0.0.0" Manufacturer="AnnasVirtual" UpgradeCode="${{ env.UPGRADE_GUID }}">
+            <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+            <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+            <MediaTemplate EmbedCab="yes" />
+            <Feature Id="ProductFeature" Title="CalculatorAvalonia" Level="1">
+              <ComponentGroupRef Id="ProductComponents" />
+            </Feature>
+          </Product>
+          <Fragment>
+            <Directory Id="TARGETDIR" Name="SourceDir">
+              <Directory Id="ProgramFilesFolder">
+                <Directory Id="INSTALLFOLDER" Name="CalculatorAvalonia" />
+              </Directory>
+            </Directory>
+          </Fragment>
+          <Fragment>
+            <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+              <Component Id="ProductComponent" Guid="*">
+                <File Source="publish\CalculatorAvalonia.exe" KeyPath="yes" />
+                <!-- Add more File elements for additional files -->
+              </Component>
+            </ComponentGroup>
+          </Fragment>
+        </Wix>' > installer.wxs
 
     - name: Create MSI (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        dotnet build CalculatorAvalonia.wixproj -c Release -o ./installer
-        mv ./installer/*.msi ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.msi
+        & "C:\Program Files (x86)\WiX Toolset v3.11\bin\candle.exe" installer.wxs -out installer.wixobj
+        & "C:\Program Files (x86)\WiX Toolset v3.11\bin\light.exe" -ext WixUIExtension installer.wixobj -out CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.msi
+      shell: powershell
 
     # Linux-specific steps
     - name: Create DEB Package (Linux)
