@@ -34,20 +34,20 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-nuget-
     - name: Publish
-      run: dotnet publish ./Calculator/Calculator.csproj --configuration Release --runtime ${{ matrix.platform }}-${{ matrix.arch }} --self-contained true --output ./publish
+      run: dotnet publish ./CalculatorAvalonia/CalculatorAvalonia.csproj --configuration Release --runtime ${{ matrix.platform }}-${{ matrix.arch }} --self-contained true --output ./publish
     - name: Zip artifact (Windows)
       if: matrix.os == 'windows-latest'
-      run: Compress-Archive -Path ./publish/* -DestinationPath ./Calculator-${{ matrix.platform }}-${{ matrix.arch }}.zip
+      run: Compress-Archive -Path ./publish/* -DestinationPath ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.zip
       shell: pwsh
     - name: Zip artifact (Linux)
       if: matrix.os == 'ubuntu-latest'
-      run: zip -r ./Calculator-${{ matrix.platform }}-${{ matrix.arch }}.zip ./publish
+      run: zip -r ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.zip ./publish
       shell: bash
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.platform }}-${{ matrix.arch }}
-        path: ./Calculator-${{ matrix.platform }}-${{ matrix.arch }}.zip
+        path: ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.zip
 
   create-release:
     needs: build
