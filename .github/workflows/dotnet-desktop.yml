@@ -66,13 +66,6 @@ jobs:
               </Directory>
             </Directory>
           </Fragment>
-          <Fragment>
-            <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
-              <Component Id="ProductComponent" Guid="*">
-                <File Source="$(var.PublishDir)\*" KeyPath="yes" />
-              </Component>
-            </ComponentGroup>
-          </Fragment>
         </Wix>' > installer.wxs
 
     - name: Create MSI (Windows)
@@ -81,9 +74,9 @@ jobs:
         $wixPath = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
         $publishDir = Resolve-Path .\publish
         & "$wixPath\heat.exe" dir $publishDir -dr INSTALLFOLDER -cg ProductComponents -gg -sfrag -srd -scom -sreg -out components.wxs
-        & "$wixPath\candle.exe" -dPublishDir="$publishDir" installer.wxs components.wxs -out .\
+        & "$wixPath\candle.exe" -dPublishDir="$publishDir" installer.wxs components.wxs
         & "$wixPath\light.exe" -ext WixUIExtension installer.wixobj components.wixobj -out CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.msi
-      shell: powershell
+      shell: pwsh
 
     # Linux-specific steps
     - name: Create DEB Package (Linux)
