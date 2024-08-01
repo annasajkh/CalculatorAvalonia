@@ -88,7 +88,7 @@ jobs:
                         Description="Avalonia Calculator Application"
                         Target="[INSTALLFOLDER]CalculatorAvalonia.exe"
                         WorkingDirectory="INSTALLFOLDER"/>
-              <RegistryValue Root="HKCU" Key="Software\YourCompany\CalculatorAvalonia" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+              <RegistryValue Root="HKCU" Key="Software\AnnasVirtual\CalculatorAvalonia" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
             </Component>
             <Component Id="StartMenuShortcut" Guid="*" Directory="ApplicationProgramsFolder">
               <Shortcut Id="ApplicationStartMenuShortcut" 
@@ -97,7 +97,7 @@ jobs:
                         Target="[INSTALLFOLDER]CalculatorAvalonia.exe"
                         WorkingDirectory="INSTALLFOLDER"/>
               <RemoveFolder Id="CleanUpShortCut" Directory="ApplicationProgramsFolder" On="uninstall"/>
-              <RegistryValue Root="HKCU" Key="Software\YourCompany\CalculatorAvalonia" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+              <RegistryValue Root="HKCU" Key="Software\AnnasVirtual\CalculatorAvalonia" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
             </Component>
           </Fragment>
         </Wix>' > installer.wxs
@@ -137,7 +137,7 @@ jobs:
         Maintainer: AnnasVirtual <annasvirtual@gmail.com>
         Description: Avalonia Calculator Application
         Depends: libgtk-3-0
-        Homepage: https://github.com/yourusername/CalculatorAvalonia" > ./deb/DEBIAN/control
+        Homepage: https://github.com/annasajkh/CalculatorAvalonia" > ./deb/DEBIAN/control
         echo "#!/bin/bash
         xdg-desktop-menu install /usr/share/applications/calculatoravalonia.desktop
         update-desktop-database" > ./deb/DEBIAN/postinst
