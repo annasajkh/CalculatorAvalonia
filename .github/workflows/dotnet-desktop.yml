@@ -112,7 +112,7 @@ jobs:
         & "$wixPath\light.exe" -ext WixUIExtension installer.wixobj components.wixobj -out CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.msi
       shell: pwsh
 
-    # Linux-specific steps
+       # Linux-specific steps
     - name: Create DEB Package (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -127,8 +127,8 @@ jobs:
         Icon=calculatoravalonia
         Type=Application
         Categories=Utility;" > ./deb/usr/share/applications/calculatoravalonia.desktop
-        # Assuming you have an icon file named icon.png in your repository
-        cp ./icon.png ./deb/usr/share/icons/hicolor/256x256/apps/calculatoravalonia.png
+        # Update the path to the correct icon file
+        cp ./CalculatorAvalonia/CalculatorAvalonia/Assets/icon.ico ./deb/usr/share/icons/hicolor/256x256/apps/calculatoravalonia.ico
         echo "Package: CalculatorAvalonia
         Version: 1.0
         Section: base
@@ -146,6 +146,7 @@ jobs:
         update-desktop-database" > ./deb/DEBIAN/postrm
         chmod 755 ./deb/DEBIAN/postinst ./deb/DEBIAN/postrm
         dpkg-deb --build ./deb CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.deb
+
 
     - name: Upload artifact
       uses: actions/upload-artifact@v3
