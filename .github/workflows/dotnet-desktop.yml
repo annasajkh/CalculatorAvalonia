@@ -123,12 +123,12 @@ jobs:
         cp -r ./publish/* ./deb/usr/local/bin/CalculatorAvalonia/
         echo "[Desktop Entry]
         Name=CalculatorAvalonia
-        Exec=/usr/local/bin/CalculatorAvalonia/CalculatorAvalonia
+        Exec=/usr/local/bin/CalculatorAvalonia
         Icon=calculatoravalonia
         Type=Application
         Categories=Utility;" > ./deb/usr/share/applications/calculatoravalonia.desktop
         # Update the path to the correct icon file
-        cp ./CalculatorAvalonia/CalculatorAvalonia/Assets/icon.ico ./deb/usr/share/icons/hicolor/256x256/apps/calculatoravalonia.ico
+        cp ./CalculatorAvalonia/Assets/icon.ico ./deb/usr/share/icons/hicolor/256x256/apps/calculatoravalonia.ico
         echo "Package: CalculatorAvalonia
         Version: 1.0
         Section: base
