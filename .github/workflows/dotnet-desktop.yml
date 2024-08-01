@@ -56,7 +56,7 @@ jobs:
             <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
             <MediaTemplate EmbedCab="yes" />
             <Feature Id="ProductFeature" Title="CalculatorAvalonia" Level="1">
-              <ComponentGroupRef Id="ProductComponents" />
+              <ComponentGroupRef Id="GeneratedProductComponents" />
             </Feature>
             <Feature Id="DesktopShortcut" Title="Desktop Shortcut" Level="1">
               <ComponentRef Id="DesktopShortcut" />
@@ -79,7 +79,7 @@ jobs:
             </Directory>
           </Fragment>
           <Fragment>
-            <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+            <ComponentGroup Id="GeneratedProductComponents" Directory="INSTALLFOLDER">
               <!-- Contents will be added by heat.exe -->
             </ComponentGroup>
             <Component Id="DesktopShortcut" Guid="*" Directory="DesktopFolder">
@@ -107,12 +107,12 @@ jobs:
       run: |
         $wixPath = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
         $publishDir = Resolve-Path .\publish
-        & "$wixPath\heat.exe" dir $publishDir -dr INSTALLFOLDER -cg ProductComponents -gg -sfrag -srd -scom -sreg -var var.PublishDir -out components.wxs
+        & "$wixPath\heat.exe" dir $publishDir -dr INSTALLFOLDER -cg GeneratedProductComponents -gg -sfrag -srd -scom -sreg -var var.PublishDir -out components.wxs
         & "$wixPath\candle.exe" -dPublishDir="$publishDir" installer.wxs components.wxs
         & "$wixPath\light.exe" -ext WixUIExtension installer.wixobj components.wixobj -out CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.msi
       shell: pwsh
 
-       # Linux-specific steps
+    # Linux-specific steps
     - name: Create DEB Package (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -127,7 +127,6 @@ jobs:
         Icon=calculatoravalonia
         Type=Application
         Categories=Utility;" > ./deb/usr/share/applications/calculatoravalonia.desktop
-        # Update the path to the correct icon file
         cp ./CalculatorAvalonia/Assets/icon.ico ./deb/usr/share/icons/hicolor/256x256/apps/calculatoravalonia.ico
         echo "Package: CalculatorAvalonia
         Version: 1.0
@@ -146,7 +145,6 @@ jobs:
         update-desktop-database" > ./deb/DEBIAN/postrm
         chmod 755 ./deb/DEBIAN/postinst ./deb/DEBIAN/postrm
         dpkg-deb --build ./deb CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.deb
-
 
     - name: Upload artifact
       uses: actions/upload-artifact@v3
@@ -174,4 +172,4 @@ jobs:
         gh release create ${{ github.ref_name }} \
           --title "Release ${{ github.ref_name }}" \
           --generate-notes \
-          $assetss
+          $assets
