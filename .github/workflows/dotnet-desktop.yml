@@ -37,13 +37,6 @@ jobs:
       run: dotnet publish ./CalculatorAvalonia/CalculatorAvalonia.csproj --configuration Release --runtime ${{ matrix.platform }}-${{ matrix.arch }} --self-contained true --output ./publish
 
     # Windows-specific steps
-    - name: Install WiX Toolset
-      if: matrix.os == 'windows-latest'
-      run: |
-        choco install wixtoolset -y
-        refreshenv
-      shell: powershell
-
     - name: Generate GUIDs
       if: matrix.os == 'windows-latest'
       run: |
@@ -86,8 +79,9 @@ jobs:
     - name: Create MSI (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        & "C:\Program Files (x86)\WiX Toolset v3.11\bin\candle.exe" installer.wxs -out installer.wixobj
-        & "C:\Program Files (x86)\WiX Toolset v3.11\bin\light.exe" -ext WixUIExtension installer.wixobj -out CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.msi
+        $wixPath = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
+        & "$wixPath\candle.exe" installer.wxs -out installer.wixobj
+        & "$wixPath\light.exe" -ext WixUIExtension installer.wixobj -out CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.msi
       shell: powershell
 
     # Linux-specific steps
