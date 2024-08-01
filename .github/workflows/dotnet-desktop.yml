@@ -42,8 +42,12 @@ jobs:
       run: |
         $productGuid = [Guid]::NewGuid().ToString().ToUpper()
         $upgradeGuid = [Guid]::NewGuid().ToString().ToUpper()
+        $desktopShortcutGuid = [Guid]::NewGuid().ToString().ToUpper()
+        $startMenuShortcutGuid = [Guid]::NewGuid().ToString().ToUpper()
         echo "PRODUCT_GUID=$productGuid" >> $env:GITHUB_ENV
         echo "UPGRADE_GUID=$upgradeGuid" >> $env:GITHUB_ENV
+        echo "DESKTOP_SHORTCUT_GUID=$desktopShortcutGuid" >> $env:GITHUB_ENV
+        echo "START_MENU_SHORTCUT_GUID=$startMenuShortcutGuid" >> $env:GITHUB_ENV
       shell: pwsh
 
     - name: Create WiX source file
@@ -56,7 +60,7 @@ jobs:
             <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
             <MediaTemplate EmbedCab="yes" />
             <Feature Id="ProductFeature" Title="CalculatorAvalonia" Level="1">
-              <ComponentGroupRef Id="GeneratedProductComponents" />
+              <ComponentGroupRef Id="GeneratedProductComponentsHeat" />
             </Feature>
             <Feature Id="DesktopShortcut" Title="Desktop Shortcut" Level="1">
               <ComponentRef Id="DesktopShortcut" />
@@ -79,10 +83,10 @@ jobs:
             </Directory>
           </Fragment>
           <Fragment>
-            <ComponentGroup Id="GeneratedProductComponents" Directory="INSTALLFOLDER">
+            <ComponentGroup Id="GeneratedProductComponentsHeat" Directory="INSTALLFOLDER">
               <!-- Contents will be added by heat.exe -->
             </ComponentGroup>
-            <Component Id="DesktopShortcut" Guid="*" Directory="DesktopFolder">
+            <Component Id="DesktopShortcut" Guid="${{ env.DESKTOP_SHORTCUT_GUID }}" Directory="DesktopFolder">
               <Shortcut Id="DesktopShortcut" 
                         Name="CalculatorAvalonia" 
                         Description="Avalonia Calculator Application"
@@ -90,7 +94,7 @@ jobs:
                         WorkingDirectory="INSTALLFOLDER"/>
               <RegistryValue Root="HKCU" Key="Software\AnnasVirtual\CalculatorAvalonia" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
             </Component>
-            <Component Id="StartMenuShortcut" Guid="*" Directory="ApplicationProgramsFolder">
+            <Component Id="StartMenuShortcut" Guid="${{ env.START_MENU_SHORTCUT_GUID }}" Directory="ApplicationProgramsFolder">
               <Shortcut Id="ApplicationStartMenuShortcut" 
                         Name="CalculatorAvalonia" 
                         Description="Avalonia Calculator Application"
