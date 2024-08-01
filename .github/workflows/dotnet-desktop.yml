@@ -83,7 +83,7 @@ jobs:
             </Directory>
           </Fragment>
           <Fragment>
-            <ComponentGroup Id="GeneratedProductComponentsHeat" Directory="INSTALLFOLDER">
+            <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
               <!-- Contents will be added by heat.exe -->
             </ComponentGroup>
             <Component Id="DesktopShortcut" Guid="${{ env.DESKTOP_SHORTCUT_GUID }}" Directory="DesktopFolder">
