@@ -51,20 +51,54 @@ jobs:
       run: |
         echo '<?xml version="1.0" encoding="UTF-8"?>
         <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-          <Product Id="${{ env.PRODUCT_GUID }}" Name="CalculatorAvalonia" Language="1033" Version="1.0.0.0" Manufacturer="AnnaVirtual" UpgradeCode="${{ env.UPGRADE_GUID }}">
+          <Product Id="${{ env.PRODUCT_GUID }}" Name="CalculatorAvalonia" Language="1033" Version="1.0.0.0" Manufacturer="AnnasVirtual" UpgradeCode="${{ env.UPGRADE_GUID }}">
             <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
             <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
             <MediaTemplate EmbedCab="yes" />
             <Feature Id="ProductFeature" Title="CalculatorAvalonia" Level="1">
               <ComponentGroupRef Id="ProductComponents" />
             </Feature>
+            <Feature Id="DesktopShortcut" Title="Desktop Shortcut" Level="1">
+              <ComponentRef Id="DesktopShortcut" />
+            </Feature>
+            <Feature Id="StartMenuShortcut" Title="Start Menu Shortcut" Level="1">
+              <ComponentRef Id="StartMenuShortcut" />
+            </Feature>
+            <UIRef Id="WixUI_FeatureTree" />
+            <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
           </Product>
           <Fragment>
             <Directory Id="TARGETDIR" Name="SourceDir">
               <Directory Id="ProgramFilesFolder">
                 <Directory Id="INSTALLFOLDER" Name="CalculatorAvalonia" />
               </Directory>
+              <Directory Id="DesktopFolder" Name="Desktop" />
+              <Directory Id="ProgramMenuFolder">
+                <Directory Id="ApplicationProgramsFolder" Name="CalculatorAvalonia"/>
+              </Directory>
             </Directory>
+          </Fragment>
+          <Fragment>
+            <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+              <!-- Contents will be added by heat.exe -->
+            </ComponentGroup>
+            <Component Id="DesktopShortcut" Guid="*" Directory="DesktopFolder">
+              <Shortcut Id="DesktopShortcut" 
+                        Name="CalculatorAvalonia" 
+                        Description="Avalonia Calculator Application"
+                        Target="[INSTALLFOLDER]CalculatorAvalonia.exe"
+                        WorkingDirectory="INSTALLFOLDER"/>
+              <RegistryValue Root="HKCU" Key="Software\YourCompany\CalculatorAvalonia" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+            </Component>
+            <Component Id="StartMenuShortcut" Guid="*" Directory="ApplicationProgramsFolder">
+              <Shortcut Id="ApplicationStartMenuShortcut" 
+                        Name="CalculatorAvalonia" 
+                        Description="Avalonia Calculator Application"
+                        Target="[INSTALLFOLDER]CalculatorAvalonia.exe"
+                        WorkingDirectory="INSTALLFOLDER"/>
+              <RemoveFolder Id="CleanUpShortCut" Directory="ApplicationProgramsFolder" On="uninstall"/>
+              <RegistryValue Root="HKCU" Key="Software\YourCompany\CalculatorAvalonia" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+            </Component>
           </Fragment>
         </Wix>' > installer.wxs
 
@@ -84,14 +118,33 @@ jobs:
       run: |
         mkdir -p ./deb/DEBIAN
         mkdir -p ./deb/usr/local/bin/CalculatorAvalonia
+        mkdir -p ./deb/usr/share/applications
+        mkdir -p ./deb/usr/share/icons/hicolor/256x256/apps
         cp -r ./publish/* ./deb/usr/local/bin/CalculatorAvalonia/
+        echo "[Desktop Entry]
+        Name=CalculatorAvalonia
+        Exec=/usr/local/bin/CalculatorAvalonia/CalculatorAvalonia
+        Icon=calculatoravalonia
+        Type=Application
+        Categories=Utility;" > ./deb/usr/share/applications/calculatoravalonia.desktop
+        # Assuming you have an icon file named icon.png in your repository
+        cp ./icon.png ./deb/usr/share/icons/hicolor/256x256/apps/calculatoravalonia.png
         echo "Package: CalculatorAvalonia
         Version: 1.0
         Section: base
         Priority: optional
         Architecture: amd64
-        Maintainer: AnnaVirtual <annasvirtual@gmail.com>
-        Description: Avalonia Calculator Application" > ./deb/DEBIAN/control
+        Maintainer: AnnasVirtual <annasvirtual@gmail.com>
+        Description: Avalonia Calculator Application
+        Depends: libgtk-3-0
+        Homepage: https://github.com/yourusername/CalculatorAvalonia" > ./deb/DEBIAN/control
+        echo "#!/bin/bash
+        xdg-desktop-menu install /usr/share/applications/calculatoravalonia.desktop
+        update-desktop-database" > ./deb/DEBIAN/postinst
+        echo "#!/bin/bash
+        xdg-desktop-menu uninstall /usr/share/applications/calculatoravalonia.desktop
+        update-desktop-database" > ./deb/DEBIAN/postrm
+        chmod 755 ./deb/DEBIAN/postinst ./deb/DEBIAN/postrm
         dpkg-deb --build ./deb CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.deb
 
     - name: Upload artifact
@@ -120,4 +173,4 @@ jobs:
         gh release create ${{ github.ref_name }} \
           --title "Release ${{ github.ref_name }}" \
           --generate-notes \
-          $assets
+          $assetss
