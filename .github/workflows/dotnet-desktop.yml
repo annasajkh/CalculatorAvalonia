@@ -35,126 +35,19 @@ jobs:
           ${{ runner.os }}-nuget-
     - name: Publish
       run: dotnet publish ./CalculatorAvalonia/CalculatorAvalonia.csproj --configuration Release --runtime ${{ matrix.platform }}-${{ matrix.arch }} --self-contained true --output ./publish
-
-    # Windows-specific steps
-    - name: Generate GUIDs
+    - name: Zip artifact (Windows)
       if: matrix.os == 'windows-latest'
-      run: |
-        $productGuid = [Guid]::NewGuid().ToString().ToUpper()
-        $upgradeGuid = [Guid]::NewGuid().ToString().ToUpper()
-        $desktopShortcutGuid = [Guid]::NewGuid().ToString().ToUpper()
-        $startMenuShortcutGuid = [Guid]::NewGuid().ToString().ToUpper()
-        echo "PRODUCT_GUID=$productGuid" >> $env:GITHUB_ENV
-        echo "UPGRADE_GUID=$upgradeGuid" >> $env:GITHUB_ENV
-        echo "DESKTOP_SHORTCUT_GUID=$desktopShortcutGuid" >> $env:GITHUB_ENV
-        echo "START_MENU_SHORTCUT_GUID=$startMenuShortcutGuid" >> $env:GITHUB_ENV
+      run: Compress-Archive -Path ./publish/* -DestinationPath ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.zip
       shell: pwsh
-
-    - name: Create WiX source file
-      if: matrix.os == 'windows-latest'
-      run: |
-        echo '<?xml version="1.0" encoding="UTF-8"?>
-        <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-          <Product Id="${{ env.PRODUCT_GUID }}" Name="CalculatorAvalonia" Language="1033" Version="1.0.0.0" Manufacturer="AnnasVirtual" UpgradeCode="${{ env.UPGRADE_GUID }}">
-            <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
-            <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
-            <MediaTemplate EmbedCab="yes" />
-            <Feature Id="ProductFeature" Title="CalculatorAvalonia" Level="1">
-              <ComponentGroupRef Id="GeneratedProductComponentsHeat" />
-            </Feature>
-            <Feature Id="DesktopShortcut" Title="Desktop Shortcut" Level="1">
-              <ComponentRef Id="DesktopShortcut" />
-            </Feature>
-            <Feature Id="StartMenuShortcut" Title="Start Menu Shortcut" Level="1">
-              <ComponentRef Id="StartMenuShortcut" />
-            </Feature>
-            <UIRef Id="WixUI_FeatureTree" />
-            <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
-          </Product>
-          <Fragment>
-            <Directory Id="TARGETDIR" Name="SourceDir">
-              <Directory Id="ProgramFilesFolder">
-                <Directory Id="INSTALLFOLDER" Name="CalculatorAvalonia" />
-              </Directory>
-              <Directory Id="DesktopFolder" Name="Desktop" />
-              <Directory Id="ProgramMenuFolder">
-                <Directory Id="ApplicationProgramsFolder" Name="CalculatorAvalonia"/>
-              </Directory>
-            </Directory>
-          </Fragment>
-          <Fragment>
-            <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
-              <!-- Contents will be added by heat.exe -->
-            </ComponentGroup>
-            <Component Id="DesktopShortcut" Guid="${{ env.DESKTOP_SHORTCUT_GUID }}" Directory="DesktopFolder">
-              <Shortcut Id="DesktopShortcut" 
-                        Name="CalculatorAvalonia" 
-                        Description="Avalonia Calculator Application"
-                        Target="[INSTALLFOLDER]CalculatorAvalonia.exe"
-                        WorkingDirectory="INSTALLFOLDER"/>
-              <RegistryValue Root="HKCU" Key="Software\AnnasVirtual\CalculatorAvalonia" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-            </Component>
-            <Component Id="StartMenuShortcut" Guid="${{ env.START_MENU_SHORTCUT_GUID }}" Directory="ApplicationProgramsFolder">
-              <Shortcut Id="ApplicationStartMenuShortcut" 
-                        Name="CalculatorAvalonia" 
-                        Description="Avalonia Calculator Application"
-                        Target="[INSTALLFOLDER]CalculatorAvalonia.exe"
-                        WorkingDirectory="INSTALLFOLDER"/>
-              <RemoveFolder Id="CleanUpShortCut" Directory="ApplicationProgramsFolder" On="uninstall"/>
-              <RegistryValue Root="HKCU" Key="Software\AnnasVirtual\CalculatorAvalonia" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-            </Component>
-          </Fragment>
-        </Wix>' > installer.wxs
-
-    - name: Create MSI (Windows)
-      if: matrix.os == 'windows-latest'
-      run: |
-        $wixPath = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
-        $publishDir = Resolve-Path .\publish
-        & "$wixPath\heat.exe" dir $publishDir -dr INSTALLFOLDER -cg GeneratedProductComponentsHeat -gg -sfrag -srd -scom -sreg -var var.PublishDir -out components.wxs
-        & "$wixPath\candle.exe" -dPublishDir="$publishDir" installer.wxs components.wxs
-        & "$wixPath\light.exe" -ext WixUIExtension installer.wixobj components.wixobj -out CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.msi
-      shell: pwsh
-
-    # Linux-specific steps
-    - name: Create DEB Package (Linux)
+    - name: Zip artifact (Linux)
       if: matrix.os == 'ubuntu-latest'
-      run: |
-        mkdir -p ./deb/DEBIAN
-        mkdir -p ./deb/usr/local/bin/CalculatorAvalonia
-        mkdir -p ./deb/usr/share/applications
-        mkdir -p ./deb/usr/share/icons/hicolor/256x256/apps
-        cp -r ./publish/* ./deb/usr/local/bin/CalculatorAvalonia/
-        echo "[Desktop Entry]
-        Name=CalculatorAvalonia
-        Exec=/usr/local/bin/CalculatorAvalonia
-        Icon=calculatoravalonia
-        Type=Application
-        Categories=Utility;" > ./deb/usr/share/applications/calculatoravalonia.desktop
-        cp ./CalculatorAvalonia/Assets/icon.ico ./deb/usr/share/icons/hicolor/256x256/apps/calculatoravalonia.ico
-        echo "Package: CalculatorAvalonia
-        Version: 1.0
-        Section: base
-        Priority: optional
-        Architecture: amd64
-        Maintainer: AnnasVirtual <annasvirtual@gmail.com>
-        Description: Avalonia Calculator Application
-        Depends: libgtk-3-0
-        Homepage: https://github.com/annasajkh/CalculatorAvalonia" > ./deb/DEBIAN/control
-        echo "#!/bin/bash
-        xdg-desktop-menu install /usr/share/applications/calculatoravalonia.desktop
-        update-desktop-database" > ./deb/DEBIAN/postinst
-        echo "#!/bin/bash
-        xdg-desktop-menu uninstall /usr/share/applications/calculatoravalonia.desktop
-        update-desktop-database" > ./deb/DEBIAN/postrm
-        chmod 755 ./deb/DEBIAN/postinst ./deb/DEBIAN/postrm
-        dpkg-deb --build ./deb CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.deb
-
+      run: zip -r ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.zip ./publish
+      shell: bash
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.platform }}-${{ matrix.arch }}
-        path: ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.${{ matrix.platform == 'win' && 'msi' || 'deb' }}
+        path: ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.zip
 
   create-release:
     needs: build
@@ -165,12 +58,20 @@ jobs:
       uses: actions/checkout@v3
     - name: Download artifacts
       uses: actions/download-artifact@v3
+    - name: Validate artifacts
+      run: |
+        for file in ./*/*.zip; do
+          if ! unzip -t "$file" > /dev/null; then
+            echo "Error: $file is not a valid zip file"
+            exit 1
+          fi
+        done
     - name: Create Release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         assets=""
-        for file in ./*/*.msi ./*/*.deb; do
+        for file in ./*/*.zip; do
           assets="$assets $file"
         done
         gh release create ${{ github.ref_name }} \
