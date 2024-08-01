@@ -3,4 +3,5 @@
 namespace CalculatorAvalonia.ViewModels;
 public class ViewModelBase : ReactiveObject
 {
+    
 }
