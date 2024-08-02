@@ -158,9 +158,9 @@ jobs:
         ./linuxdeploy-x86_64.AppImage --appdir AppDir --output appimage
 
         # Rename the created AppImage
-        mv CalculatorAvalonia-*.AppImage CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.AppImage
+        mv CalculatorAvalonia-*.AppImage CalculatorAvalonia-installer-${{ matrix.platform }}-${{ matrix.arch }}.AppImage
 
-        if [ ! -f "CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.AppImage" ]; then
+        if [ ! -f "CalculatorAvalonia-installer-${{ matrix.platform }}-${{ matrix.arch }}.AppImage" ]; then
           echo "AppImage creation failed"
           exit 1
         fi
@@ -182,8 +182,8 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       uses: actions/upload-artifact@v3
       with:
-        name: appimage-${{ matrix.platform }}-${{ matrix.arch }}
-        path: ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.AppImage
+        name: installer-${{ matrix.platform }}-${{ matrix.arch }}
+        path: ./CalculatorAvalonia-installer-${{ matrix.platform }}-${{ matrix.arch }}.AppImage
 
   create-release:
     needs: build
