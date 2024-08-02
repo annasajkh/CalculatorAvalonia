@@ -60,7 +60,6 @@ jobs:
         OutFile "CalculatorAvalonia-installer-${{ matrix.platform }}-${{ matrix.arch }}.exe"
         InstallDir "$PROGRAMFILES64\CalculatorAvalonia"
         !insertmacro MUI_PAGE_WELCOME
-        !insertmacro MUI_PAGE_LICENSE
         !insertmacro MUI_PAGE_DIRECTORY
         !insertmacro MUI_PAGE_INSTFILES
         !insertmacro MUI_PAGE_FINISH
