@@ -37,11 +37,11 @@ jobs:
       run: dotnet publish ./CalculatorAvalonia/CalculatorAvalonia.csproj --configuration Release --runtime ${{ matrix.platform }}-${{ matrix.arch }} --self-contained true --output ./publish
     - name: Create portable artifact
       run: |
-        if [ "${{ matrix.os }}" == "windows-latest" ]; then
+        if ("${{ matrix.os }}" -eq "windows-latest") {
           Compress-Archive -Path ./publish/* -DestinationPath ./CalculatorAvalonia-portable-${{ matrix.platform }}-${{ matrix.arch }}.zip
-        else
+        } else {
           zip -r ./CalculatorAvalonia-portable-${{ matrix.platform }}-${{ matrix.arch }}.zip ./publish
-        fi
+        }
       shell: pwsh
     - name: Create NSIS installer (Windows)
       if: matrix.os == 'windows-latest'
