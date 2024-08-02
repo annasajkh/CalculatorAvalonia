@@ -141,6 +141,9 @@ jobs:
         # Copy application files
         cp -r publish/* AppDir/usr/bin/
 
+        # Copy the icon file
+        cp CalculatorAvalonia/Assets/icon.png AppDir/usr/share/icons/hicolor/256x256/apps/CalculatorAvalonia.png
+
         # Create .desktop file
         cat > AppDir/usr/share/applications/CalculatorAvalonia.desktop <<EOL
         [Desktop Entry]
@@ -150,9 +153,6 @@ jobs:
         Type=Application
         Categories=Utility;
         EOL
-
-        # Copy icon (assuming you have an icon file named CalculatorAvalonia.png)
-        # cp CalculatorAvalonia.png AppDir/usr/share/icons/hicolor/256x256/apps/
 
         # Create AppImage
         ./linuxdeploy-x86_64.AppImage --appdir AppDir --output appimage
