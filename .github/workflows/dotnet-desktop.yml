@@ -1,5 +1,4 @@
 name: Publish .NET 8 Desktop App
-
 on:
   push:
     branches: [ "main" ]
@@ -7,10 +6,8 @@ on:
       - "v*"
   pull_request:
     branches: [ "main" ]
-
 permissions:
   contents: write
-
 jobs:
   build:
     strategy:
@@ -25,12 +22,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
-
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 8.0.x
-
     - name: Cache .NET dependencies
       uses: actions/cache@v3
       with:
@@ -38,39 +33,54 @@ jobs:
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
         restore-keys: |
           ${{ runner.os }}-nuget-
-
     - name: Publish
       run: dotnet publish ./CalculatorAvalonia/CalculatorAvalonia.csproj --configuration Release --runtime ${{ matrix.platform }}-${{ matrix.arch }} --self-contained true --output ./publish
-
-    - name: Create Portable Build
+    - name: Create portable artifact
       run: |
-        mkdir -p ./portable
-        cp -r ./publish/* ./portable/
-
-    - name: Zip artifact (Windows)
-      if: matrix.os == 'windows-latest'
-      run: Compress-Archive -Path ./portable/* -DestinationPath ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}-portable.zip
+        if [ "${{ matrix.os }}" == "windows-latest" ]; then
+          Compress-Archive -Path ./publish/* -DestinationPath ./CalculatorAvalonia-portable-${{ matrix.platform }}-${{ matrix.arch }}.zip
+        else
+          zip -r ./CalculatorAvalonia-portable-${{ matrix.platform }}-${{ matrix.arch }}.zip ./publish
+        fi
       shell: pwsh
-
-    - name: Zip artifact (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      run: zip -r ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}-portable.zip ./portable
-      shell: bash
-
-    - name: Create NSIS Installer (Windows)
+    - name: Create NSIS installer (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        choco install nsis
-        makensis -V4 -NOCD -DOUTPUT=CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}-installer.exe -DSOURCEDIR=./publish ./CalculatorAvalonia/installer.nsi
-      shell: cmd
-
-    - name: Upload artifact
+        choco install nsis -y
+        # Create NSIS script (installer.nsi)
+        @'
+        !include "MUI2.nsh"
+        Name "CalculatorAvalonia"
+        OutFile "CalculatorAvalonia-installer-${{ matrix.platform }}-${{ matrix.arch }}.exe"
+        InstallDir "$PROGRAMFILES64\CalculatorAvalonia"
+        !insertmacro MUI_PAGE_DIRECTORY
+        !insertmacro MUI_PAGE_INSTFILES
+        !insertmacro MUI_LANGUAGE "English"
+        Section
+          SetOutPath $INSTDIR
+          File /r "publish\*.*"
+          CreateShortcut "$DESKTOP\CalculatorAvalonia.lnk" "$INSTDIR\CalculatorAvalonia.exe"
+          WriteUninstaller "$INSTDIR\Uninstall.exe"
+        SectionEnd
+        Section "Uninstall"
+          Delete "$DESKTOP\CalculatorAvalonia.lnk"
+          RMDir /r "$INSTDIR"
+        SectionEnd
+        '@ | Out-File -Encoding ASCII installer.nsi
+        # Build installer
+        makensis installer.nsi
+      shell: pwsh
+    - name: Upload portable artifact
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ matrix.platform }}-${{ matrix.arch }}
-        path: |
-          ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}-portable.zip
-          ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}-installer.exe
+        name: portable-${{ matrix.platform }}-${{ matrix.arch }}
+        path: ./CalculatorAvalonia-portable-${{ matrix.platform }}-${{ matrix.arch }}.zip
+    - name: Upload installer artifact (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: installer-${{ matrix.platform }}-${{ matrix.arch }}
+        path: ./CalculatorAvalonia-installer-${{ matrix.platform }}-${{ matrix.arch }}.exe
 
   create-release:
     needs: build
@@ -79,25 +89,29 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-
     - name: Download artifacts
       uses: actions/download-artifact@v3
-
     - name: Validate artifacts
       run: |
-        for file in ./*/*.zip; do
-          if ! unzip -t "$file" > /dev/null; then
-            echo "Error: $file is not a valid zip file"
-            exit 1
+        for file in ./*/*; do
+          if [[ $file == *.zip ]]; then
+            if ! unzip -t "$file" > /dev/null; then
+              echo "Error: $file is not a valid zip file"
+              exit 1
+            fi
+          elif [[ $file == *.exe ]]; then
+            if ! file "$file" | grep -q "executable"; then
+              echo "Error: $file is not a valid executable"
+              exit 1
+            fi
           fi
         done
-
     - name: Create Release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         assets=""
-        for file in ./*/*.zip ./*/*.exe; do
+        for file in ./*/*; do
           assets="$assets $file"
         done
         gh release create ${{ github.ref_name }} \
