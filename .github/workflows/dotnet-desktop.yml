@@ -46,6 +46,11 @@ jobs:
       run: |
         Copy-Item "./CalculatorAvalonia/Assets/icon.ico" -Destination "./publish/icon.ico"
       shell: pwsh
+    - name: Copy icon to temp folder
+      if: matrix.os == 'windows-latest'
+      run: |
+        Copy-Item "./publish/icon.ico" -Destination "$env:TEMP\icon.ico"
+      shell: pwsh
     - name: Create NSIS installer (Windows)
       if: matrix.os == 'windows-latest'
       run: |
@@ -62,8 +67,8 @@ jobs:
         Name "CalculatorAvalonia"
         OutFile "CalculatorAvalonia-installer-${{ matrix.platform }}-${{ matrix.arch }}.exe"
         InstallDir "$PROGRAMFILES64\CalculatorAvalonia"
-        !define MUI_ICON "$INSTDIR\icon.ico"
-        !define MUI_UNICON "$INSTDIR\icon.ico"
+        !define MUI_ICON "$%TEMP%\icon.ico"
+        !define MUI_UNICON "$%TEMP%\icon.ico"
         !insertmacro MUI_PAGE_WELCOME
         !insertmacro MUI_PAGE_DIRECTORY
         !insertmacro MUI_PAGE_INSTFILES
