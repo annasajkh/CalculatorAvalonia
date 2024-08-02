@@ -75,7 +75,7 @@ jobs:
         VIProductVersion "1.4.8.0"
         VIAddVersionKey "ProductName" "CalculatorAvalonia"
         VIAddVersionKey "FileDescription" "CalculatorAvalonia Installer"
-        VIAddVersionKey "LegalCopyright" "© 2024 AnnasVirtual"
+        VIAddVersionKey "LegalCopyright" "AnnasVirtual"
         VIAddVersionKey "FileVersion" "1.4.8.0"
         VIAddVersionKey "ProductVersion" "1.4.8.0"
         VIAddVersionKey "CompanyName" "AnnasVirtual"
