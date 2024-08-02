@@ -4,10 +4,10 @@ on:
     branches: [ "main" ]
     tags:
       - "v*"
-  pull_request:
-    branches: [ "main" ]
+
 permissions:
   contents: write
+
 jobs:
   build:
     strategy:
@@ -26,6 +26,7 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 8.0.x
+
     - name: Cache .NET dependencies
       uses: actions/cache@v3
       with:
@@ -33,8 +34,10 @@ jobs:
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
         restore-keys: |
           ${{ runner.os }}-nuget-
+
     - name: Publish
       run: dotnet publish ./CalculatorAvalonia/CalculatorAvalonia.csproj --configuration Release --runtime ${{ matrix.platform }}-${{ matrix.arch }} --self-contained true --output ./publish
+
     - name: Create portable artifact
       run: |
         if ("${{ matrix.os }}" -eq "windows-latest") {
@@ -43,6 +46,7 @@ jobs:
           zip -r ./CalculatorAvalonia-portable-${{ matrix.platform }}-${{ matrix.arch }}.zip ./publish
         }
       shell: pwsh
+    
     - name: Create NSIS installer (Windows)
       if: matrix.os == 'windows-latest'
       run: |
@@ -56,21 +60,58 @@ jobs:
         # Create NSIS script (installer.nsi)
         $nsisScript = @'
         !include "MUI2.nsh"
+        !include "FileFunc.nsh"
+
         Name "CalculatorAvalonia"
         OutFile "CalculatorAvalonia-installer-${{ matrix.platform }}-${{ matrix.arch }}.exe"
         InstallDir "$PROGRAMFILES64\CalculatorAvalonia"
+        
+        # Request application privileges for Windows Vista and higher
+        RequestExecutionLevel admin
+
+        !insertmacro MUI_PAGE_WELCOME
         !insertmacro MUI_PAGE_DIRECTORY
         !insertmacro MUI_PAGE_INSTFILES
+        !insertmacro MUI_PAGE_FINISH
+
+        !insertmacro MUI_UNPAGE_WELCOME
+        !insertmacro MUI_UNPAGE_CONFIRM
+        !insertmacro MUI_UNPAGE_INSTFILES
+        !insertmacro MUI_UNPAGE_FINISH
+
         !insertmacro MUI_LANGUAGE "English"
-        Section
+
+        Section "Install"
           SetOutPath $INSTDIR
           File /r "publish\*.*"
+          
+          # Create Desktop shortcut
           CreateShortcut "$DESKTOP\CalculatorAvalonia.lnk" "$INSTDIR\CalculatorAvalonia.exe"
+          
+          # Write uninstaller
           WriteUninstaller "$INSTDIR\Uninstall.exe"
+          
+          # Register application for Add/Remove Programs
+          ${GetSize} "$INSTDIR" "/S=0K" $0 $1 $2
+          IntFmt $0 "0x%08X" $0
+          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "DisplayName" "CalculatorAvalonia"
+          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "UninstallString" "$\"$INSTDIR\Uninstall.exe$\""
+          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "QuietUninstallString" "$\"$INSTDIR\Uninstall.exe$\" /S"
+          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "InstallLocation" "$INSTDIR"
+          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "DisplayIcon" "$INSTDIR\CalculatorAvalonia.exe,0"
+          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "Publisher" "Your Company Name"
+          WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "EstimatedSize" "$0"
         SectionEnd
+
         Section "Uninstall"
+          # Remove Desktop shortcut
           Delete "$DESKTOP\CalculatorAvalonia.lnk"
+          
+          # Remove installation directory
           RMDir /r "$INSTDIR"
+          
+          # Remove registry keys
+          DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia"
         SectionEnd
         '@
         $nsisScript | Out-File -Encoding ASCII installer.nsi
@@ -85,11 +126,13 @@ jobs:
         
         Write-Output "Installer created successfully"
       shell: pwsh
+
     - name: Upload portable artifact
       uses: actions/upload-artifact@v3
       with:
         name: portable-${{ matrix.platform }}-${{ matrix.arch }}
         path: ./CalculatorAvalonia-portable-${{ matrix.platform }}-${{ matrix.arch }}.zip
+
     - name: Upload installer artifact (Windows)
       if: matrix.os == 'windows-latest'
       uses: actions/upload-artifact@v3
