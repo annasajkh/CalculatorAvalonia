@@ -72,12 +72,12 @@ jobs:
         !define MUI_ICON "$%TEMP%\icon.ico"
         !define MUI_UNICON "$%TEMP%\icon.ico"
 
-        VIProductVersion "v1.4.9.0"
+        VIProductVersion "1.5.0.0"
         VIAddVersionKey "ProductName" "CalculatorAvalonia"
         VIAddVersionKey "FileDescription" "CalculatorAvalonia Installer"
         VIAddVersionKey "LegalCopyright" "AnnasVirtual"
-        VIAddVersionKey "FileVersion" "v1.4.9.0"
-        VIAddVersionKey "ProductVersion" "v1.4.9.0"
+        VIAddVersionKey "FileVersion" "1.5.0.0"
+        VIAddVersionKey "ProductVersion" "1.5.0.0"
         VIAddVersionKey "CompanyName" "AnnasVirtual"
 
         !insertmacro MUI_PAGE_WELCOME
@@ -99,7 +99,7 @@ jobs:
           WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "DisplayIcon" "$INSTDIR\icon.ico"
           WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "Publisher" "AnnasVirtual"
           WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "URLInfoAbout" "https://github.com/annasajkh/CalculatorAvalonia"
-          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "DisplayVersion" "v1.4.9.0"
+          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "DisplayVersion" "1.5.0.0"
           WriteUninstaller "$INSTDIR\Uninstall.exe"
         SectionEnd
         Section "Uninstall"
