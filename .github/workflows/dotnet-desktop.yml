@@ -52,13 +52,14 @@ jobs:
           Write-Error "NSIS installation failed"
           exit 1
         }
-        
+
         # Create NSIS script (installer.nsi)
         $nsisScript = @'
         !include "MUI2.nsh"
         Name "CalculatorAvalonia"
         OutFile "CalculatorAvalonia-installer-${{ matrix.platform }}-${{ matrix.arch }}.exe"
         InstallDir "$PROGRAMFILES64\CalculatorAvalonia"
+        Icon "CalculatorAvalonia\Assets\icon.ico" ; Set the icon for the installer
         !insertmacro MUI_PAGE_WELCOME
         !insertmacro MUI_PAGE_DIRECTORY
         !insertmacro MUI_PAGE_INSTFILES
@@ -71,10 +72,12 @@ jobs:
         Section
           SetOutPath $INSTDIR
           File /r "publish\*.*"
-          CreateShortcut "$SMPROGRAMS\CalculatorAvalonia\CalculatorAvalonia.lnk" "$INSTDIR\CalculatorAvalonia.exe"
-          CreateShortcut "$DESKTOP\CalculatorAvalonia.lnk" "$INSTDIR\CalculatorAvalonia.exe"
+          File "CalculatorAvalonia\Assets\icon.ico" ; Include the icon file in the installation directory
+          CreateShortcut "$SMPROGRAMS\CalculatorAvalonia\CalculatorAvalonia.lnk" "$INSTDIR\CalculatorAvalonia.exe" "$INSTDIR\icon.ico"
+          CreateShortcut "$DESKTOP\CalculatorAvalonia.lnk" "$INSTDIR\CalculatorAvalonia.exe" "$INSTDIR\icon.ico"
           WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "DisplayName" "CalculatorAvalonia"
           WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "UninstallString" "$INSTDIR\Uninstall.exe"
+          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "DisplayIcon" "$INSTDIR\icon.ico"
           WriteUninstaller "$INSTDIR\Uninstall.exe"
         SectionEnd
         Section "Uninstall"
@@ -85,15 +88,15 @@ jobs:
         SectionEnd
         '@
         $nsisScript | Out-File -Encoding ASCII installer.nsi
-        
+
         # Build installer
         & "C:\Program Files (x86)\NSIS\makensis.exe" installer.nsi
-        
+
         if (-not (Test-Path "CalculatorAvalonia-installer-${{ matrix.platform }}-${{ matrix.arch }}.exe")) {
           Write-Error "Installer creation failed"
           exit 1
         }
-        
+
         Write-Output "Installer created successfully"
       shell: pwsh
     - name: Upload portable artifact
@@ -124,7 +127,7 @@ jobs:
         # Create the release
         release_output=$(gh release create ${{ github.ref_name }} --title "Release ${{ github.ref_name }}" --generate-notes)
         echo "Release created: $release_output"
-        
+
         # Upload only zip and exe files to the release
         for file in ./*/*; do
           if [[ -f "$file" && ($file == *.zip || $file == *.exe) ]]; then
