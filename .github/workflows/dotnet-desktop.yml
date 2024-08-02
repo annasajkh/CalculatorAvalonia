@@ -4,8 +4,6 @@ on:
     branches: [ "main" ]
     tags:
       - "v*"
-  pull_request:
-    branches: [ "main" ]
 permissions:
   contents: write
 jobs:
@@ -43,6 +41,11 @@ jobs:
           zip -r ./CalculatorAvalonia-portable-${{ matrix.platform }}-${{ matrix.arch }}.zip ./publish
         }
       shell: pwsh
+    - name: Copy icon file
+      if: matrix.os == 'windows-latest'
+      run: |
+        Copy-Item "./CalculatorAvalonia/Assets/icon.ico" -Destination "./publish/icon.ico"
+      shell: pwsh
     - name: Create NSIS installer (Windows)
       if: matrix.os == 'windows-latest'
       run: |
@@ -59,6 +62,8 @@ jobs:
         Name "CalculatorAvalonia"
         OutFile "CalculatorAvalonia-installer-${{ matrix.platform }}-${{ matrix.arch }}.exe"
         InstallDir "$PROGRAMFILES64\CalculatorAvalonia"
+        !define MUI_ICON "$INSTDIR\icon.ico"
+        !define MUI_UNICON "$INSTDIR\icon.ico"
         !insertmacro MUI_PAGE_WELCOME
         !insertmacro MUI_PAGE_DIRECTORY
         !insertmacro MUI_PAGE_INSTFILES
@@ -71,10 +76,11 @@ jobs:
         Section
           SetOutPath $INSTDIR
           File /r "publish\*.*"
-          CreateShortcut "$SMPROGRAMS\CalculatorAvalonia\CalculatorAvalonia.lnk" "$INSTDIR\CalculatorAvalonia.exe"
-          CreateShortcut "$DESKTOP\CalculatorAvalonia.lnk" "$INSTDIR\CalculatorAvalonia.exe"
+          CreateShortcut "$SMPROGRAMS\CalculatorAvalonia\CalculatorAvalonia.lnk" "$INSTDIR\CalculatorAvalonia.exe" "" "$INSTDIR\icon.ico"
+          CreateShortcut "$DESKTOP\CalculatorAvalonia.lnk" "$INSTDIR\CalculatorAvalonia.exe" "" "$INSTDIR\icon.ico"
           WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "DisplayName" "CalculatorAvalonia"
           WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "UninstallString" "$INSTDIR\Uninstall.exe"
+          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "DisplayIcon" "$INSTDIR\icon.ico"
           WriteUninstaller "$INSTDIR\Uninstall.exe"
         SectionEnd
         Section "Uninstall"
