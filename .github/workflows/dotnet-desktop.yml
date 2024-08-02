@@ -46,9 +46,15 @@ jobs:
     - name: Create NSIS installer (Windows)
       if: matrix.os == 'windows-latest'
       run: |
+        # Install NSIS
         choco install nsis -y
+        if (-not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe")) {
+          Write-Error "NSIS installation failed"
+          exit 1
+        }
+        
         # Create NSIS script (installer.nsi)
-        @'
+        $nsisScript = @'
         !include "MUI2.nsh"
         Name "CalculatorAvalonia"
         OutFile "CalculatorAvalonia-installer-${{ matrix.platform }}-${{ matrix.arch }}.exe"
@@ -66,9 +72,18 @@ jobs:
           Delete "$DESKTOP\CalculatorAvalonia.lnk"
           RMDir /r "$INSTDIR"
         SectionEnd
-        '@ | Out-File -Encoding ASCII installer.nsi
+        '@
+        $nsisScript | Out-File -Encoding ASCII installer.nsi
+        
         # Build installer
-        makensis installer.nsi
+        & "C:\Program Files (x86)\NSIS\makensis.exe" installer.nsi
+        
+        if (-not (Test-Path "CalculatorAvalonia-installer-${{ matrix.platform }}-${{ matrix.arch }}.exe")) {
+          Write-Error "Installer creation failed"
+          exit 1
+        }
+        
+        Write-Output "Installer created successfully"
       shell: pwsh
     - name: Upload portable artifact
       uses: actions/upload-artifact@v3
