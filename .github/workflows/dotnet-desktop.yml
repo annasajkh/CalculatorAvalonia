@@ -125,9 +125,13 @@ jobs:
     - name: Create AppImage (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
-        # Install AppImage tools
+        # Install required packages
         sudo apt-get update
-        sudo apt-get install -y appstream
+        sudo apt-get install -y libfuse2 
+        
+        # Download linuxdeploy and make it executable
+        wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+        chmod +x linuxdeploy-x86_64.AppImage
 
         # Create AppDir structure
         mkdir -p AppDir/usr/bin
@@ -150,12 +154,11 @@ jobs:
         # Copy icon (assuming you have an icon file named CalculatorAvalonia.png)
         # cp CalculatorAvalonia.png AppDir/usr/share/icons/hicolor/256x256/apps/
 
-        # Download AppImage tool
-        wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
-        chmod +x appimagetool-x86_64.AppImage
-
         # Create AppImage
-        ./appimagetool-x86_64.AppImage AppDir CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.AppImage
+        ./linuxdeploy-x86_64.AppImage --appdir AppDir --output appimage
+
+        # Rename the created AppImage
+        mv CalculatorAvalonia-*.AppImage CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.AppImage
 
         if [ ! -f "CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.AppImage" ]; then
           echo "AppImage creation failed"
