@@ -122,6 +122,48 @@ jobs:
         
         Write-Output "Installer created successfully"
       shell: pwsh
+    - name: Create AppImage (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        # Install AppImage tools
+        sudo apt-get update
+        sudo apt-get install -y appstream
+
+        # Create AppDir structure
+        mkdir -p AppDir/usr/bin
+        mkdir -p AppDir/usr/share/applications
+        mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+
+        # Copy application files
+        cp -r publish/* AppDir/usr/bin/
+
+        # Create .desktop file
+        cat > AppDir/usr/share/applications/CalculatorAvalonia.desktop <<EOL
+        [Desktop Entry]
+        Name=CalculatorAvalonia
+        Exec=CalculatorAvalonia
+        Icon=CalculatorAvalonia
+        Type=Application
+        Categories=Utility;
+        EOL
+
+        # Copy icon (assuming you have an icon file named CalculatorAvalonia.png)
+        # cp CalculatorAvalonia.png AppDir/usr/share/icons/hicolor/256x256/apps/
+
+        # Download AppImage tool
+        wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+        chmod +x appimagetool-x86_64.AppImage
+
+        # Create AppImage
+        ./appimagetool-x86_64.AppImage AppDir CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.AppImage
+
+        if [ ! -f "CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.AppImage" ]; then
+          echo "AppImage creation failed"
+          exit 1
+        fi
+
+        echo "AppImage created successfully"
+      shell: bash
     - name: Upload portable artifact
       uses: actions/upload-artifact@v3
       with:
@@ -133,6 +175,12 @@ jobs:
       with:
         name: installer-${{ matrix.platform }}-${{ matrix.arch }}
         path: ./CalculatorAvalonia-installer-${{ matrix.platform }}-${{ matrix.arch }}.exe
+    - name: Upload AppImage artifact (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: appimage-${{ matrix.platform }}-${{ matrix.arch }}
+        path: ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.AppImage
 
   create-release:
     needs: build
@@ -157,7 +205,7 @@ jobs:
         
         # Upload artifacts to the release
         for file in ./artifacts/*/*; do
-          if [[ -f "$file" && ($file == *.zip || $file == *.exe) ]]; then
+          if [[ -f "$file" && ($file == *.zip || $file == *.exe || $file == *.AppImage) ]]; then
             echo "Uploading $file to release..."
             gh release upload ${{ github.ref_name }} "$file" --clobber
           fi
