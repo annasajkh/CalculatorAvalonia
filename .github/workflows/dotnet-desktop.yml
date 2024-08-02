@@ -35,6 +35,11 @@ jobs:
           ${{ runner.os }}-nuget-
     - name: Publish
       run: dotnet publish ./CalculatorAvalonia/CalculatorAvalonia.csproj --configuration Release --runtime ${{ matrix.platform }}-${{ matrix.arch }} --self-contained true --output ./publish
+    - name: Copy Icon File (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        Copy-Item -Path 'CalculatorAvalonia\Assets\icon.ico' -Destination './publish/icon.ico'
+      shell: pwsh
     - name: Create portable artifact
       run: |
         if ("${{ matrix.os }}" -eq "windows-latest") {
@@ -59,7 +64,8 @@ jobs:
         Name "CalculatorAvalonia"
         OutFile "CalculatorAvalonia-installer-${{ matrix.platform }}-${{ matrix.arch }}.exe"
         InstallDir "$PROGRAMFILES64\CalculatorAvalonia"
-        Icon "CalculatorAvalonia\Assets\icon.ico" ; Set the icon for the installer
+        Icon "$INSTDIR\icon.ico" ; Set the icon for the installer
+
         !insertmacro MUI_PAGE_WELCOME
         !insertmacro MUI_PAGE_DIRECTORY
         !insertmacro MUI_PAGE_INSTFILES
@@ -69,10 +75,11 @@ jobs:
         !insertmacro MUI_UNPAGE_INSTFILES
         !insertmacro MUI_UNPAGE_FINISH
         !insertmacro MUI_LANGUAGE "English"
+
         Section
           SetOutPath $INSTDIR
           File /r "publish\*.*"
-          File "CalculatorAvalonia\Assets\icon.ico" ; Include the icon file in the installation directory
+          File "icon.ico" ; Include the icon file in the installation directory
           CreateShortcut "$SMPROGRAMS\CalculatorAvalonia\CalculatorAvalonia.lnk" "$INSTDIR\CalculatorAvalonia.exe" "$INSTDIR\icon.ico"
           CreateShortcut "$DESKTOP\CalculatorAvalonia.lnk" "$INSTDIR\CalculatorAvalonia.exe" "$INSTDIR\icon.ico"
           WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "DisplayName" "CalculatorAvalonia"
@@ -80,6 +87,7 @@ jobs:
           WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "DisplayIcon" "$INSTDIR\icon.ico"
           WriteUninstaller "$INSTDIR\Uninstall.exe"
         SectionEnd
+
         Section "Uninstall"
           Delete "$SMPROGRAMS\CalculatorAvalonia\CalculatorAvalonia.lnk"
           Delete "$DESKTOP\CalculatorAvalonia.lnk"
