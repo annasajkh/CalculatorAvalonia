@@ -4,10 +4,10 @@ on:
     branches: [ "main" ]
     tags:
       - "v*"
-
+  pull_request:
+    branches: [ "main" ]
 permissions:
   contents: write
-
 jobs:
   build:
     strategy:
@@ -26,7 +26,6 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 8.0.x
-
     - name: Cache .NET dependencies
       uses: actions/cache@v3
       with:
@@ -34,10 +33,8 @@ jobs:
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
         restore-keys: |
           ${{ runner.os }}-nuget-
-
     - name: Publish
       run: dotnet publish ./CalculatorAvalonia/CalculatorAvalonia.csproj --configuration Release --runtime ${{ matrix.platform }}-${{ matrix.arch }} --self-contained true --output ./publish
-
     - name: Create portable artifact
       run: |
         if ("${{ matrix.os }}" -eq "windows-latest") {
@@ -46,7 +43,6 @@ jobs:
           zip -r ./CalculatorAvalonia-portable-${{ matrix.platform }}-${{ matrix.arch }}.zip ./publish
         }
       shell: pwsh
-    
     - name: Create NSIS installer (Windows)
       if: matrix.os == 'windows-latest'
       run: |
@@ -126,13 +122,11 @@ jobs:
         
         Write-Output "Installer created successfully"
       shell: pwsh
-
     - name: Upload portable artifact
       uses: actions/upload-artifact@v3
       with:
         name: portable-${{ matrix.platform }}-${{ matrix.arch }}
         path: ./CalculatorAvalonia-portable-${{ matrix.platform }}-${{ matrix.arch }}.zip
-
     - name: Upload installer artifact (Windows)
       if: matrix.os == 'windows-latest'
       uses: actions/upload-artifact@v3
@@ -140,7 +134,7 @@ jobs:
         name: installer-${{ matrix.platform }}-${{ matrix.arch }}
         path: ./CalculatorAvalonia-installer-${{ matrix.platform }}-${{ matrix.arch }}.exe
 
-create-release:
+  create-release:
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
