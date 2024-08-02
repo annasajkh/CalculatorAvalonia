@@ -56,58 +56,21 @@ jobs:
         # Create NSIS script (installer.nsi)
         $nsisScript = @'
         !include "MUI2.nsh"
-        !include "FileFunc.nsh"
-
         Name "CalculatorAvalonia"
         OutFile "CalculatorAvalonia-installer-${{ matrix.platform }}-${{ matrix.arch }}.exe"
         InstallDir "$PROGRAMFILES64\CalculatorAvalonia"
-        
-        # Request application privileges for Windows Vista and higher
-        RequestExecutionLevel admin
-
-        !insertmacro MUI_PAGE_WELCOME
         !insertmacro MUI_PAGE_DIRECTORY
         !insertmacro MUI_PAGE_INSTFILES
-        !insertmacro MUI_PAGE_FINISH
-
-        !insertmacro MUI_UNPAGE_WELCOME
-        !insertmacro MUI_UNPAGE_CONFIRM
-        !insertmacro MUI_UNPAGE_INSTFILES
-        !insertmacro MUI_UNPAGE_FINISH
-
         !insertmacro MUI_LANGUAGE "English"
-
-        Section "Install"
+        Section
           SetOutPath $INSTDIR
           File /r "publish\*.*"
-          
-          # Create Desktop shortcut
           CreateShortcut "$DESKTOP\CalculatorAvalonia.lnk" "$INSTDIR\CalculatorAvalonia.exe"
-          
-          # Write uninstaller
           WriteUninstaller "$INSTDIR\Uninstall.exe"
-          
-          # Register application for Add/Remove Programs
-          ${GetSize} "$INSTDIR" "/S=0K" $0 $1 $2
-          IntFmt $0 "0x%08X" $0
-          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "DisplayName" "CalculatorAvalonia"
-          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "UninstallString" "$\"$INSTDIR\Uninstall.exe$\""
-          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "QuietUninstallString" "$\"$INSTDIR\Uninstall.exe$\" /S"
-          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "InstallLocation" "$INSTDIR"
-          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "DisplayIcon" "$INSTDIR\CalculatorAvalonia.exe,0"
-          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "Publisher" "Your Company Name"
-          WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "EstimatedSize" "$0"
         SectionEnd
-
         Section "Uninstall"
-          # Remove Desktop shortcut
           Delete "$DESKTOP\CalculatorAvalonia.lnk"
-          
-          # Remove installation directory
           RMDir /r "$INSTDIR"
-          
-          # Remove registry keys
-          DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia"
         SectionEnd
         '@
         $nsisScript | Out-File -Encoding ASCII installer.nsi
@@ -122,51 +85,6 @@ jobs:
         
         Write-Output "Installer created successfully"
       shell: pwsh
-    - name: Create AppImage (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        # Install required packages
-        sudo apt-get update
-        sudo apt-get install -y libfuse2 
-        
-        # Download linuxdeploy and make it executable
-        wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
-        chmod +x linuxdeploy-x86_64.AppImage
-
-        # Create AppDir structure
-        mkdir -p AppDir/usr/bin
-        mkdir -p AppDir/usr/share/applications
-        mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
-
-        # Copy application files
-        cp -r publish/* AppDir/usr/bin/
-
-        # Copy the icon file
-        cp CalculatorAvalonia/Assets/icon.png AppDir/usr/share/icons/hicolor/256x256/apps/CalculatorAvalonia.png
-
-        # Create .desktop file
-        cat > AppDir/usr/share/applications/CalculatorAvalonia.desktop <<EOL
-        [Desktop Entry]
-        Name=CalculatorAvalonia
-        Exec=CalculatorAvalonia
-        Icon=CalculatorAvalonia
-        Type=Application
-        Categories=Utility;
-        EOL
-
-        # Create AppImage
-        ./linuxdeploy-x86_64.AppImage --appdir AppDir --output appimage
-
-        # Rename the created AppImage
-        mv CalculatorAvalonia-*.AppImage CalculatorAvalonia-installer-${{ matrix.platform }}-${{ matrix.arch }}.AppImage
-
-        if [ ! -f "CalculatorAvalonia-installer-${{ matrix.platform }}-${{ matrix.arch }}.AppImage" ]; then
-          echo "AppImage creation failed"
-          exit 1
-        fi
-
-        echo "AppImage created successfully"
-      shell: bash
     - name: Upload portable artifact
       uses: actions/upload-artifact@v3
       with:
@@ -178,12 +96,6 @@ jobs:
       with:
         name: installer-${{ matrix.platform }}-${{ matrix.arch }}
         path: ./CalculatorAvalonia-installer-${{ matrix.platform }}-${{ matrix.arch }}.exe
-    - name: Upload AppImage artifact (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v3
-      with:
-        name: installer-${{ matrix.platform }}-${{ matrix.arch }}
-        path: ./CalculatorAvalonia-installer-${{ matrix.platform }}-${{ matrix.arch }}.AppImage
 
   create-release:
     needs: build
@@ -194,21 +106,17 @@ jobs:
       uses: actions/checkout@v3
     - name: Download artifacts
       uses: actions/download-artifact@v3
-      with:
-        path: ./artifacts
-    - name: Display structure of downloaded files
-      run: ls -R
-      working-directory: ./artifacts
     - name: Create Release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         # Create the release
-        gh release create ${{ github.ref_name }} --title "Release ${{ github.ref_name }}" --generate-notes
+        release_output=$(gh release create ${{ github.ref_name }} --draft --title "Release ${{ github.ref_name }}" --generate-notes)
+        echo "Release created: $release_output"
         
-        # Upload artifacts to the release
-        for file in ./artifacts/*/*; do
-          if [[ -f "$file" && ($file == *.zip || $file == *.exe || $file == *.AppImage) ]]; then
+        # Upload only zip and exe files to the release
+        for file in ./*/*; do
+          if [[ -f "$file" && ($file == *.zip || $file == *.exe) ]]; then
             echo "Uploading $file to release..."
             gh release upload ${{ github.ref_name }} "$file" --clobber
           fi
