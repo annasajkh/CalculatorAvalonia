@@ -97,7 +97,7 @@ jobs:
         name: installer-${{ matrix.platform }}-${{ matrix.arch }}
         path: ./CalculatorAvalonia-installer-${{ matrix.platform }}-${{ matrix.arch }}.exe
 
-  create-release:
+ create-release:
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
@@ -111,7 +111,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         # Create the release
-        release_output=$(gh release create ${{ github.ref_name }} --draft --title "Release ${{ github.ref_name }}" --generate-notes)
+        release_output=$(gh release create ${{ github.ref_name }} --title "Release ${{ github.ref_name }}" --generate-notes)
         echo "Release created: $release_output"
         
         # Upload only zip and exe files to the release
