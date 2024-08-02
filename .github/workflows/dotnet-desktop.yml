@@ -1,4 +1,5 @@
 name: Publish .NET 8 Desktop App
+
 on:
   push:
     branches: [ "main" ]
@@ -6,8 +7,10 @@ on:
       - "v*"
   pull_request:
     branches: [ "main" ]
+
 permissions:
   contents: write
+
 jobs:
   build:
     strategy:
@@ -22,10 +25,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 8.0.x
+
     - name: Cache .NET dependencies
       uses: actions/cache@v3
       with:
@@ -33,21 +38,39 @@ jobs:
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
         restore-keys: |
           ${{ runner.os }}-nuget-
+
     - name: Publish
       run: dotnet publish ./CalculatorAvalonia/CalculatorAvalonia.csproj --configuration Release --runtime ${{ matrix.platform }}-${{ matrix.arch }} --self-contained true --output ./publish
+
+    - name: Create Portable Build
+      run: |
+        mkdir -p ./portable
+        cp -r ./publish/* ./portable/
+
     - name: Zip artifact (Windows)
       if: matrix.os == 'windows-latest'
-      run: Compress-Archive -Path ./publish/* -DestinationPath ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.zip
+      run: Compress-Archive -Path ./portable/* -DestinationPath ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}-portable.zip
       shell: pwsh
+
     - name: Zip artifact (Linux)
       if: matrix.os == 'ubuntu-latest'
-      run: zip -r ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.zip ./publish
+      run: zip -r ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}-portable.zip ./portable
       shell: bash
+
+    - name: Create NSIS Installer (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        choco install nsis
+        makensis -V4 -NOCD -DOUTPUT=CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}-installer.exe -DSOURCEDIR=./publish ./CalculatorAvalonia/installer.nsi
+      shell: cmd
+
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.platform }}-${{ matrix.arch }}
-        path: ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}.zip
+        path: |
+          ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}-portable.zip
+          ./CalculatorAvalonia-${{ matrix.platform }}-${{ matrix.arch }}-installer.exe
 
   create-release:
     needs: build
@@ -56,8 +79,10 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
+
     - name: Download artifacts
       uses: actions/download-artifact@v3
+
     - name: Validate artifacts
       run: |
         for file in ./*/*.zip; do
@@ -66,12 +91,13 @@ jobs:
             exit 1
           fi
         done
+
     - name: Create Release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         assets=""
-        for file in ./*/*.zip; do
+        for file in ./*/*.zip ./*/*.exe; do
           assets="$assets $file"
         done
         gh release create ${{ github.ref_name }} \
