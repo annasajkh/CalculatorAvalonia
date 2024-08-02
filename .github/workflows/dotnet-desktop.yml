@@ -4,6 +4,8 @@ on:
     branches: [ "main" ]
     tags:
       - "v*"
+  pull_request:
+    branches: [ "main" ]
 permissions:
   contents: write
 jobs:
@@ -86,6 +88,8 @@ jobs:
           WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "DisplayName" "CalculatorAvalonia"
           WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "UninstallString" "$INSTDIR\Uninstall.exe"
           WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "DisplayIcon" "$INSTDIR\icon.ico"
+          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "Publisher" "AnnasVirtual"
+          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculatorAvalonia" "URLInfoAbout" "https://github.com/annasajkh/CalculatorAvalonia"
           WriteUninstaller "$INSTDIR\Uninstall.exe"
         SectionEnd
         Section "Uninstall"
